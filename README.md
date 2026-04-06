@@ -322,23 +322,7 @@ SELECT add_retention_policy('stg_inverter_analogic', INTERVAL '1 year');
 
 ### Modelos a implementar:
 
-1. **Staging:**
-   - [ ] `stg_inverter_strings` - Normalizar correntes das strings
-   - [ ] `stg_inverter_discrete` - Extrair alarmes e eventos
-   - [ ] `stg_relay_analogic` - Dados de relés de proteção
-   - [ ] `stg_logger_analogic` - Dados de smart loggers
-   - [ ] `stg_weather_station` - Dados meteorológicos
-   - [ ] `stg_meter` - Dados de medidores
-   - [ ] `stg_tracker` - Dados de trackers
-
-2. **Intermediate:**
-   - [ ] `int_inverter` - Inversores enriquecidos com metadados
-   - [ ] `int_events_alarms` - Eventos/alarmes cruzados com catálogo
-
-3. **Mart:**
-   - [ ] `mart_inverter_performance` - Performance Ratio por inversor
-   - [ ] `mart_plant_daily_energy` - Energia diária por usina
-   - [ ] `mart_device_availability` - Disponibilidade de devices
+1. **Mart:**
    - [ ] `mart_string_heatmap` - Análise de strings (heatmap)
 
 ---
