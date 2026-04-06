@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_logger_analogic_data
+    description: |
+      Extrai e normaliza dados analógicos dos smart loggers.
+      Converte valores do formato Grid Co (valor@timestamp) para valores numéricos puros.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do smart logger
+        tests:
+          - not_null
+      - name: active_power
+        description: Potência ativa em kW
+      - name: daily_active_energy
+        description: Energia ativa diária em kWh
+      - name: cumulative_active_energy
+        description: Energia ativa acumulada em kWh
+      - name: power_reactive
+        description: Potência reativa em kVAr
+      - name: dc_input_power
+        description: Potência de entrada DC em kW
+      - name: active_power_limit
+        description: Limite de potência ativa em kW
+      - name: power_factor
+        description: Fator de potência (adimensional)
+      - name: efficiency
+        description: Eficiência em %
+      - name: dc_current
+        description: Corrente DC em A
+      - name: current_phase_a
+        description: Corrente da fase A em A
+      - name: current_phase_b
+        description: Corrente da fase B em A
+      - name: current_phase_c
+        description: Corrente da fase C em A
+      - name: line_voltage_ab
+        description: Tensão de linha AB em V
+      - name: line_voltage_bc
+        description: Tensão de linha BC em V
+      - name: line_voltage_ca
+        description: Tensão de linha CA em V
+      - name: inverters_producing_count
+        description: Quantidade de inversores produzindo
+      - name: logger_state
+        description: Estado do logger (0/1)
+      - name: operation_state
+        description: Estado de operação (0/1)
+      - name: breaker_position
+        description: Posição do disjuntor (0/1)

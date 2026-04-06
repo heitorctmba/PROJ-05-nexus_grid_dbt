@@ -1,0 +1,205 @@
+version: 2
+
+models:
+  - name: int_events_alarms
+    description: |
+      **Intermediate Model - Eventos e Alarmes de Todos os Dispositivos**
+
+      Processa dados discretos de TODOS os tipos de devices e faz join com o
+      catálogo de eventos/alarmes para identificar e classificar ocorrências.
+
+      **Processamento:**
+      1. UNION ALL de dados discretos de todos os devices (inverter, logger, meter, etc)
+      2. "Explode" o JSON de códigos discretos (uma linha por código)
+      3. JOIN com tb_event_alarm_catalog para buscar:
+         - Descrição do evento/alarme
+         - Tipo (event/alarm)
+         - Severidade (low/medium/high)
+      4. Retorna apenas códigos que existem no catálogo e estão ativos
+
+      **Dispositivos Incluídos:**
+      - Inverters (device_type_id = 1)
+      - Loggers (device_type_id = 2)
+      - Meters (device_type_id = 3) 
+      - Relays (device_type_id = 4) 
+      - Weather Stations (device_type_id = 5) 
+
+      **Características:**
+      - Incremental: processa apenas novos timestamps
+      - Unique key: (device_id, timestamp, code)
+      - Índices otimizados para queries por device, timestamp, tipo e severidade
+
+      **Casos de Uso:**
+      - Dashboards de eventos em tempo real
+      - Alertas de alarmes críticos
+      - Histórico de eventos por dispositivo
+      - Análise de padrões de falhas por tipo de dispositivo
+
+      **Autores:** Heitor Teixeira
+
+    config:
+      materialized: incremental
+      unique_key: ['id']
+      tags: ['int']
+
+    columns:
+      - name: timestamp
+        description: Data/hora do evento/alarme
+        tests:
+          - not_null
+
+      - name: power_plant_id
+        description: ID da usina solar
+        tests:
+          - not_null
+
+      - name: power_plant_name
+        description: Nome da usina solar (vindo de tb_power_plants)
+
+      - name: device_id
+        description: ID do dispositivo (inverter, logger, meter, etc)
+        tests:
+          - not_null
+
+      - name: device_name
+        description: Nome/identificador do dispositivo (vindo de tb_devices)
+
+      - name: device_type_id
+        description: |
+          Tipo de dispositivo:
+          - 1: Inverter
+          - 2: Logger
+          - 3: Meter
+          - 4: Relay
+          - 5: Weather Station
+        tests:
+          - not_null
+
+      - name: code
+        description: |
+          Código numérico do evento/alarme (ex: 2003, 2011, 61440).
+          Corresponde ao campo 'code' em tb_event_alarm_catalog.
+        tests:
+          - not_null
+
+      - name: value
+        description: |
+          Valor do código:
+          - 0: Evento/alarme desatuado (inativo)
+          - 1: Evento/alarme atuado (ativo)
+        tests:
+          - not_null
+
+      - name: description
+        description: |
+          Descrição do evento/alarme vinda do catálogo.
+          Exemplo: "Sobretemperatura no inversor", "Falha de comunicação com string"
+        tests:
+          - not_null
+
+      - name: type
+        description: |
+          Tipo de ocorrência:
+          - event: Evento informativo (não crítico)
+          - alarm: Alarme que requer atenção
+        tests:
+          - not_null
+
+      - name: severity
+        description: |
+          Nível de severidade:
+          - low: Baixa prioridade (informativo)
+          - medium: Média prioridade (atenção recomendada)
+          - high: Alta prioridade (ação imediata necessária)
+        tests:
+          - not_null
+
+      - name: acknowledged
+        description: |
+          Indica se o evento/alarme foi reconhecido por um operador:
+          - true: Reconhecido
+          - false: Não reconhecido
+        tests:
+          - not_null
+
+      - name: acknowledged_by
+        description: Usuário que reconheceu o evento/alarme (NULL se não reconhecido)
+
+      - name: acknowledged_at
+        description: Timestamp de quando o evento/alarme foi reconhecido (NULL se não reconhecido)
+
+      - name: id
+        description: |
+          ID único do registro (hash MD5 de device_id + timestamp + code).
+          Usado como unique_key para incrementalidade.
+        tests:
+          - not_null
+          - unique
+
+  - name: int_power_plant_status
+    description: |
+      **Intermediate Model - Status Operacional das Usinas em Tempo Real**
+
+      Calcula o status operacional de cada usina baseado em:
+      - Comunicação com devices (últimos 10 minutos)
+      - Alarmes críticos ativos (severidade high)
+
+      **Lógica de Status:**
+      - **generating**: Usina recebendo dados de devices nos últimos 10 min E sem alarmes críticos
+      - **offline**: Usina com algum device retornando alarme de severidade high
+      - **no_communication**: Usina NÃO recebeu dados de nenhum device nos últimos 10 min
+
+      **Prioridade (do mais crítico para o menos):**
+      1. offline (alarme crítico)
+      2. no_communication (sem dados)
+      3. generating (operação normal)
+
+      **Características:**
+      - Materialized: View (sempre retorna status atual)
+      - Atualização: Em tempo real (a cada query)
+      - Janela temporal: Últimos 10 minutos
+
+      **Casos de Uso:**
+      - Dashboard de status operacional
+      - Alertas em tempo real
+      - Monitoramento de saúde das usinas
+
+      **Autores:** Heitor Teixeira
+
+    config:
+      materialized: view
+      tags: ['int']
+
+    columns:
+      - name: power_plant_id
+        description: ID da usina solar
+        tests:
+          - not_null
+
+      - name: power_plant_status
+        description: |
+          Status operacional da usina:
+          - generating: Operação normal (comunicando sem alarmes críticos)
+          - offline: Alarme crítico ativo (severidade high)
+          - no_communication: Sem dados nos últimos 10 minutos
+        tests:
+          - not_null
+
+      - name: last_communication_timestamp
+        description: Timestamp da última comunicação recebida de qualquer device
+
+      - name: devices_communicating
+        description: Quantidade de tipos de devices que enviaram dados nos últimos 10 minutos
+
+      - name: has_critical_alarm
+        description: |
+          Indica se existe algum alarme de severidade high ativo:
+          - true: Alarme crítico ativo
+          - false: Sem alarmes críticos
+        tests:
+          - not_null
+
+      - name: calculated_at
+        description: Timestamp de quando o status foi calculado
+        tests:
+          - not_null

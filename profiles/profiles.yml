@@ -1,0 +1,36 @@
+Axionics_dbt: # Esse nome deve ser IGUAL ao definido no dbt_project.yml
+  target: local
+
+  outputs:
+    local:
+      type: postgres
+      host: "{{ env_var('DB_HOST_LOCAL') }}"
+      user: "{{ env_var('DBT_DB_USER_LOCAL') }}"
+      password: "{{ env_var('DBT_DB_PASSWORD_LOCAL') }}"
+      port: "{{ env_var('DB_PORT_LOCAL', 5432) | int }}"
+      dbname: "{{ env_var('DBT_DB_NAME_LOCAL', 'dbt') }}"
+      schema: dbt
+      threads: 1
+      connect_timeout: 10
+
+    dev:
+      type: postgres
+      host: "{{ env_var('DB_HOST_DEV') }}"
+      user: "{{ env_var('DBT_DB_USER_DEV') }}"
+      password: "{{ env_var('DBT_DB_PASSWORD_DEV') }}"
+      port: "{{ env_var('DB_PORT_DEV', 5432) | int }}"
+      dbname: "{{ env_var('DBT_DB_NAME_DEV', 'dbt') }}"
+      schema: dbt
+      threads: 1
+      connect_timeout: 10
+
+    prod:
+      type: postgres
+      host: "{{ env_var('DB_HOST_PROD') }}"
+      user: "{{ env_var('DBT_DB_USER_PROD') }}"
+      password: "{{ env_var('DBT_DB_PASSWORD_PROD') }}"
+      port: "{{ env_var('DB_PORT_PROD', 5432) | int }}"
+      dbname: "{{ env_var('DBT_DB_NAME_PROD', 'dbt') }}"
+      schema: dbt
+      threads: 2
+      connect_timeout: 10

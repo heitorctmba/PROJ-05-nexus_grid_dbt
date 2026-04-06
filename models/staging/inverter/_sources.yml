@@ -1,0 +1,112 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Camada RAW (Bronze Layer) - Dados brutos recebidos dos sensores
+      no formato Grid Co (valor@timestamp)
+    database: "{{ target.database }}"
+    schema: public
+    tables:
+      - name: raw_inverter
+        description: >
+          Dados brutos dos inversores solares. Cada registro contém um JSON
+          com métricas analógicas, strings e eventos/alarmes no formato
+          Grid Co: "valor@YYYYMMDDHHmmss"
+        columns:
+          - name: timestamp
+            description: Data/hora da leitura (timestamp do sensor)
+            tests:
+              - not_null
+
+          - name: power_plant_id
+            description: ID da usina solar
+            tests:
+              - not_null
+
+          - name: device_id
+            description: ID do inversor
+            tests:
+              - not_null
+
+          - name: json_data
+            description: >
+              Payload completo do sensor contendo:
+              - Campos analógicos (active_power, frequency, etc)
+              - Strings (string_1_current até string_N_current)
+              - Campos discretos (alarmes 2001-2106, communication_failure)
+            tests:
+              - not_null
+
+        freshness:
+          warn_after: {count: 10, period: minute}
+          error_after: {count: 30, period: minute}
+        loaded_at_field: timestamp
+
+      - name: tb_event_alarm_catalog
+        description: >
+          Catálogo de eventos e alarmes dos dispositivos.
+          Mapeia códigos discretos para descrições legíveis, classificação
+          por tipo (event/alarm) e severidade (low/medium/high).
+        columns:
+          - name: id
+            description: ID único do registro
+            tests:
+              - not_null
+
+          - name: device_type_id
+            description: >
+              ID do tipo de dispositivo:
+              - 1: Inverter
+              - 2: Logger
+              - 3: Meter
+              - 4: Relay
+              - 5: Weather Station
+            tests:
+              - not_null
+
+          - name: code
+            description: >
+              Código numérico do evento/alarme (ex: 2003, 2011, 61440).
+              Corresponde às chaves dos dados discretos.
+            tests:
+              - not_null
+
+          - name: value
+            description: >
+              Valor do código:
+              - 0: Evento/alarme desatuado (inativo)
+              - 1: Evento/alarme atuado (ativo)
+            tests:
+              - not_null
+
+          - name: description
+            description: Descrição legível do evento/alarme
+            tests:
+              - not_null
+
+          - name: type
+            description: >
+              Tipo de ocorrência:
+              - event: Evento informativo (não crítico)
+              - alarm: Alarme que requer atenção
+            tests:
+              - not_null
+
+          - name: severity
+            description: >
+              Nível de severidade:
+              - low: Baixa prioridade
+              - medium: Média prioridade
+              - high: Alta prioridade (ação imediata)
+            tests:
+              - not_null
+
+          - name: is_active
+            description: >
+              Indica se o registro está ativo (TRUE) ou arquivado (FALSE)
+            tests:
+              - not_null
+
+          - name: created_at
+            description: Data de criação do registro

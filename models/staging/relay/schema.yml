@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: stg_relay_analogic_data
+    description: |
+      Extrai e normaliza dados analógicos dos relés de proteção (DJMT).
+      Converte valores do formato Grid Co (valor@timestamp) para valores numéricos puros.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do relé
+        tests:
+          - not_null
+      - name: active_power
+        description: Potência ativa em kW
+      - name: line_voltage_ab
+        description: Tensão de linha AB em kV
+      - name: line_voltage_bc
+        description: Tensão de linha BC em kV
+      - name: line_voltage_ca
+        description: Tensão de linha CA em kV
+      - name: apparent_power
+        description: Potência aparente em kVA
+      - name: power_reactive
+        description: Potência reativa em kVAr
+      - name: current_phase_a
+        description: Corrente da fase A em A
+      - name: current_phase_b
+        description: Corrente da fase B em A
+      - name: current_phase_c
+        description: Corrente da fase C em A
+
+  - name: stg_relay_discrete_data
+    description: |
+      Extrai dados discretos (eventos/alarmes) dos relés de proteção em formato JSON.
+      Separa campos discretos (proteções) dos campos analógicos.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do relé
+        tests:
+          - not_null
+      - name: discrete_data_json
+        description: |
+          JSON contendo códigos discretos de eventos/alarmes do relé:
+          - overvoltage, undervoltage
+          - time_overcurrent, instantaneous_overcurrent
+          - neutral_time_overcurrent, neutral_instantaneous_overcurrent
+          - current_imbalance, voltage_imbalance
+          - directional_power
+          - overfrequency_protection, underfrequency_protection
+          - breaker_position
+          - communication_failure
+        tests:
+          - not_null

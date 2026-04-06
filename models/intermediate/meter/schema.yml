@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: int_meter_latest_readings
+    description: |
+      Retorna o último valor registrado de cada campo analógico
+      dos medidores de faturamento por power_plant_id.
+      Usado como input para dashboards e modelo mart_power_plants_overview.
+    columns:
+      - name: device_id
+        description: ID do medidor
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: timestamp
+        description: Timestamp da última leitura
+        tests:
+          - not_null
+      - name: active_power
+        description: Potência ativa em kW (último valor registrado)
+      - name: power_reactive
+        description: Potência reativa em kVAr
+      - name: apparent_power
+        description: Potência aparente em kVA
+      - name: power_factor
+        description: Fator de potência
+      - name: exported_active_energy
+        description: Energia ativa exportada acumulada em kWh
+      - name: imported_active_energy
+        description: Energia ativa importada acumulada em kWh
+      - name: exported_reactive_energy
+        description: Energia reativa exportada acumulada em kVArh
+      - name: imported_reactive_energy
+        description: Energia reativa importada acumulada em kVArh
+      - name: frequency
+        description: Frequência da rede em Hz
+      - name: current_phase_a
+        description: Corrente da fase A em A
+      - name: current_phase_b
+        description: Corrente da fase B em A
+      - name: current_phase_c
+        description: Corrente da fase C em A
+      - name: line_voltage_ab
+        description: Tensão de linha AB em V
+      - name: line_voltage_bc
+        description: Tensão de linha BC em V
+      - name: line_voltage_ca
+        description: Tensão de linha CA em V

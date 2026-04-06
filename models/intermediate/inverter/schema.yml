@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: int_inverter_availability
+    description: |
+      Calcula a disponibilidade dos inversores por usina.
+      Disponibilidade = (Inversores Ativos / Total de Inversores) * 100.
+
+      Inversor ATIVO: última leitura com active_power > 0 ou qualquer campo analógico não nulo/não zerado.
+      Inversor INATIVO: última leitura com todos os campos zerados/nulos ou sem leituras recentes.
+    columns:
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+          - unique
+      - name: total_inverters
+        description: Total de inversores cadastrados na usina (is_active = TRUE)
+      - name: active_inverters
+        description: Quantidade de inversores ativos (com última leitura válida)
+      - name: inactive_inverters
+        description: Quantidade de inversores inativos (última leitura zerada/nula)
+      - name: no_data_inverters
+        description: Quantidade de inversores sem leitura recente (perderam conexão)
+      - name: availability_pct
+        description: Percentual de disponibilidade dos inversores (0-100%)
+
+  - name: int_inverter_latest_readings
+    description: |
+      Despivota dados analógicos dos inversores em formato tabular para visualização
+      em painéis tipo "table view". Cada registro representa o último valor coletado
+      de cada campo analógico por dispositivo.
+
+      Ideal para dashboards de monitoramento em tempo real no Grafana.
+    columns:
+      - name: device_id
+        description: ID do inversor
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: field_name
+        description: Nome do campo analógico (ex. Frequency, Power Factor, Voltage AB)
+        tests:
+          - not_null
+      - name: value_numeric
+        description: Valor numérico do campo (arredondado para 2 casas decimais)
+      - name: value_formatted
+        description: Valor formatado com unidade (ex. "59.97 Hz", "1.00", "834.20 V")
+      - name: unit
+        description: Unidade de medida (Hz, kW, V, A, °C, %, MOhm, etc.)
+      - name: timestamp
+        description: Timestamp da última leitura coletada
+        tests:
+          - not_null
+      - name: display_order
+        description: Ordem de exibição dos campos (1=Active Power, 2=Reactive Power, etc.)
+
+  - name: int_inverter_daily_energy_timeseries
+    description: |
+      Série temporal de energia diária total gerada por todas as usinas do portfólio.
+      Agrega a energia de todos os inversores por dia, ideal para gráficos de linha
+      mostrando evolução da geração ao longo do tempo.
+
+      Materialização: Incremental (delete+insert por dia)
+      Atualização: Últimos 3 dias a cada execução (safety margin)
+      Uso: Dashboards executivos, automações N8N, análise de tendências
+    columns:
+      - name: date
+        description: Data da agregação (YYYY-MM-DD)
+        tests:
+          - not_null
+          - unique
+      - name: total_energy_kwh
+        description: Energia total gerada no dia por todos os inversores (kWh)
+        tests:
+          - not_null
+      - name: total_active_inverters
+        description: Quantidade de inversores que reportaram dados no dia
+        tests:
+          - not_null
+      - name: total_power_plants
+        description: Quantidade de usinas que reportaram dados no dia
+        tests:
+          - not_null

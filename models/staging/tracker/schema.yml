@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: stg_tracker_analogic_data
+    description: |
+      Extrai e normaliza dados analógicos dos trackers solares.
+      Converte valores do formato Grid Co (valor@timestamp) para valores numéricos puros.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do tracker
+        tests:
+          - not_null
+      - name: posat
+        description: Posição angular atual do tracker em graus (°)
+      - name: posal
+        description: Posição angular alvo do tracker em graus (°)
+
+  - name: stg_tracker_discrete_data
+    description: |
+      Extrai dados discretos (estados e alarmes) dos trackers solares em formato JSON.
+      Separa campos discretos dos campos analógicos.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do tracker
+        tests:
+          - not_null
+      - name: discrete_data_json
+        description: |
+          JSON contendo estados e alarmes do tracker:
+          Estados:
+          - auto_on: Modo de controle automático ativo
+          - manu_on: Modo de controle manual ativo
+          - sleep_on: Modo hibernação ativo
+          - trk_curso: Backtracking em andamento
+          Alarmes:
+          - bat_crit: Carga da bateria abaixo do limite crítico
+          - bat_ins_al: Carga insuficiente para atingir posição alvo
+          - bat_ins_seg: Carga insuficiente para manter posição
+          - bat_min: Carga da bateria abaixo do limite mínimo
+          - bot_emerg: Botão de emergência acionado
+          - flh_com: Falha de comunicação
+          - flh_leve: Falha leve de CI ou módulo de leitura
+          - flh_zigbee: Falha no módulo Zigbee
+          - out_of_range: Tracker fora dos limites de operação
+        tests:
+          - not_null

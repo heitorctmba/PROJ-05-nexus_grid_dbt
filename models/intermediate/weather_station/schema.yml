@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: int_weather_station_latest_readings
+    description: |
+      Retorna o último valor registrado de cada campo analógico
+      das estações meteorológicas por power_plant_id.
+      Usado como input para dashboards e modelo mart_power_plants_overview.
+    columns:
+      - name: device_id
+        description: ID da estação meteorológica
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: timestamp
+        description: Timestamp da última leitura
+        tests:
+          - not_null
+      - name: irradiance_ghi
+        description: Irradiância Global Horizontal em W/m² (último valor registrado)
+      - name: irradiance_poa
+        description: Irradiância no Plano do Arranjo em W/m² (último valor registrado)
+      - name: air_temperature
+        description: Temperatura do ar em °C
+      - name: module_temperature
+        description: Temperatura do módulo solar em °C
+      - name: rain_signal
+        description: Sinal de chuva (adimensional)
+      - name: accumulated_rain
+        description: Chuva acumulada total em mm
+      - name: hourly_accumulated_rain
+        description: Chuva acumulada na hora em mm
+      - name: monthly_accumulated_rain
+        description: Chuva acumulada no mês em mm

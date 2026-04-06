@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_meter_analogic_data
+    description: |
+      Extrai e normaliza dados analógicos dos medidores de faturamento.
+      Converte valores do formato Grid Co (valor@timestamp) para valores numéricos puros.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID do medidor
+        tests:
+          - not_null
+      - name: active_power
+        description: Potência ativa em kW
+      - name: power_reactive
+        description: Potência reativa em kVAr
+      - name: apparent_power
+        description: Potência aparente em kVA
+      - name: power_factor
+        description: Fator de potência (adimensional)
+      - name: exported_active_energy
+        description: Energia ativa exportada em kWh
+      - name: imported_active_energy
+        description: Energia ativa importada em kWh
+      - name: exported_reactive_energy
+        description: Energia reativa exportada em kVArh
+      - name: imported_reactive_energy
+        description: Energia reativa importada em kVArh
+      - name: frequency
+        description: Frequência da rede em Hz
+      - name: current_phase_a
+        description: Corrente da fase A em A
+      - name: current_phase_b
+        description: Corrente da fase B em A
+      - name: current_phase_c
+        description: Corrente da fase C em A
+      - name: line_voltage_ab
+        description: Tensão de linha AB em V
+      - name: line_voltage_bc
+        description: Tensão de linha BC em V
+      - name: line_voltage_ca
+        description: Tensão de linha CA em V

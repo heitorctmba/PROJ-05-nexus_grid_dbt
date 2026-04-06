@@ -1,0 +1,45 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Camada RAW (Bronze Layer) - Dados brutos recebidos dos sensores
+      no formato Grid Co (valor@timestamp)
+    database: "{{ target.database }}"
+    schema: public
+    tables:
+      - name: raw_tracker
+        description: >
+          Dados brutos dos trackers solares. Cada registro contém um JSON
+          com posições angulares analógicas e estados/alarmes discretos no formato
+          Grid Co: "valor@YYYYMMDDHHmmss"
+        columns:
+          - name: timestamp
+            description: Data/hora da leitura (timestamp do sensor)
+            tests:
+              - not_null
+
+          - name: power_plant_id
+            description: ID da usina solar
+            tests:
+              - not_null
+
+          - name: device_id
+            description: ID do tracker
+            tests:
+              - not_null
+
+          - name: json_data
+            description: >
+              Payload completo do sensor contendo:
+              - Campos analógicos (posat, posal)
+              - Campos discretos (auto_on, bat_crit, bat_ins_al, bat_ins_seg,
+                bat_min, bot_emerg, flh_com, flh_leve, flh_zigbee, manu_on,
+                out_of_range, sleep_on, trk_curso)
+            tests:
+              - not_null
+
+        freshness:
+          warn_after: {count: 10, period: minute}
+          error_after: {count: 30, period: minute}
+        loaded_at_field: timestamp

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_weather_station_analogic_data
+    description: |
+      Extrai e normaliza dados analógicos das estações meteorológicas.
+      Converte valores do formato Grid Co (valor@timestamp) para valores numéricos puros.
+    columns:
+      - name: timestamp
+        description: Data/hora da leitura original
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: device_id
+        description: ID da estação meteorológica
+        tests:
+          - not_null
+      - name: irradiance_ghi
+        description: Irradiância Global Horizontal em W/m² (Global Horizontal Irradiance)
+      - name: irradiance_poa
+        description: Irradiância no Plano do Arranjo em W/m² (Plane of Array)
+      - name: air_temperature
+        description: Temperatura do ar em °C
+      - name: module_temperature
+        description: Temperatura do módulo solar em °C
+      - name: rain_signal
+        description: Sinal de chuva (adimensional)
+      - name: accumulated_rain
+        description: Chuva acumulada total em mm
+      - name: hourly_accumulated_rain
+        description: Chuva acumulada na hora em mm
+      - name: monthly_accumulated_rain
+        description: Chuva acumulada no mês em mm

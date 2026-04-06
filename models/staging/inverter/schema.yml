@@ -1,0 +1,335 @@
+version: 2
+
+models:
+  - name: stg_inverter_analogic_data
+    description: >
+      **Staging Model - Dados Analógicos de Inversores Solares**
+
+
+      Extrai e normaliza dados analógicos dos inversores a partir da camada RAW.
+      Converte valores do formato Grid Co (valor@YYYYMMDDHHmmss) para valores
+      numéricos puros, facilitando análises e agregações.
+
+
+      **Características:**
+      - Hypertable TimescaleDB com chunks de 1 dia
+      - Atualização incremental a cada 5 minutos
+      - Compressão automática após 7 dias (economia de 90%+)
+      - Retenção de 1 ano
+      - Unique key: (device_id, timestamp)
+
+
+      **Campos incluídos:**
+      - Potência e Energia (active_power, power_reactive, etc)
+      - Parâmetros Elétricos (frequência, eficiência, correntes, tensões)
+      - Temperatura e Isolamento
+      - Estado de Operação
+
+
+      **Campos NÃO incluídos neste modelo:**
+      - Strings (string_1_current até string_N_current) - modelo separado futuro
+      - Alarmes e Eventos (códigos 2001-2106) - modelo stg_inverter_discrete
+
+
+      **Autores:** Heitor Teixeira
+
+    config:
+      materialized: incremental
+      unique_key: ['device_id', 'timestamp']
+
+    columns:
+      # =====================================================================
+      # IDENTIFICADORES E TIMESTAMP
+      # =====================================================================
+      - name: timestamp
+        description: >
+          Data/hora da leitura do sensor (timestamptz).
+          Utilizado como dimension_column da hypertable.
+        tests:
+          - not_null
+
+      - name: power_plant_id
+        description: ID da usina solar onde o inversor está instalado
+        tests:
+          - not_null
+
+      - name: device_id
+        description: ID único do inversor
+        tests:
+          - not_null
+
+      # =====================================================================
+      # POTÊNCIA E ENERGIA
+      # =====================================================================
+      - name: active_power
+        description: >
+          Potência ativa do inversor (kW).
+          Valores negativos indicam exportação para a rede.
+          Valores positivos indicam importação (raro em inversores).
+        tests:
+          - not_null
+
+      - name: power_reactive
+        description: Potência reativa (kVAr)
+        tests:
+          - not_null
+
+      - name: power_input
+        description: >
+          Potência de entrada DC do inversor (kW).
+          Sempre >= 0. Zero durante a noite.
+
+      - name: power_factor
+        description: >
+          Fator de potência (adimensional, 0 a 1).
+          Valores típicos: 0.95 a 1.0
+
+      - name: daily_active_energy
+        description: >
+          Energia ativa diária acumulada (kWh).
+          Reseta à meia-noite. Sempre >= 0.
+
+      - name: cumulative_active_energy
+        description: >
+          Energia ativa acumulada total desde a instalação (kWh).
+          Valor sempre crescente (monotônico).
+
+      # =====================================================================
+      # PARÂMETROS ELÉTRICOS
+      # =====================================================================
+      - name: frequency
+        description: >
+          Frequência da rede elétrica (Hz).
+          Valor nominal: 60 Hz (Brasil).
+          Variação aceitável: 59.9 a 60.1 Hz
+
+      - name: efficiency
+        description: >
+          Eficiência do inversor (%).
+          Valores típicos: 96% a 98.5%.
+          Zero durante a noite (sem produção).
+
+      - name: current_phase_a
+        description: Corrente da fase A (A)
+
+      - name: current_phase_b
+        description: Corrente da fase B (A)
+
+      - name: current_phase_c
+        description: Corrente da fase C (A)
+
+      - name: line_voltage_ab
+        description: >
+          Tensão de linha entre fases A e B (V).
+          Valor nominal: ~380V (rede trifásica).
+          Variação aceitável: 360V a 400V
+
+      - name: line_voltage_bc
+        description: >
+          Tensão de linha entre fases B e C (V).
+          Valor nominal: ~380V
+
+      - name: line_voltage_ca
+        description: >
+          Tensão de linha entre fases C e A (V).
+          Valor nominal: ~380V
+
+      - name: string_voltage
+        description: >
+          Tensão média das strings DC (V).
+          Valores típicos: 800V a 850V.
+          Zero durante a noite.
+
+      # =====================================================================
+      # TEMPERATURA E ISOLAMENTO
+      # =====================================================================
+      - name: temperature_internal
+        description: >
+          Temperatura interna do inversor (°C).
+          Valores típicos: 25°C a 65°C.
+          Acima de 65°C pode indicar problema de ventilação.
+
+      - name: resistance_insulation
+        description: >
+          Resistência de isolamento (MΩ).
+          Valores típicos: 50 MΩ a 100 MΩ.
+          Valores baixos (<10 MΩ) indicam problema de isolamento.
+
+      # =====================================================================
+      # ESTADO DE OPERAÇÃO
+      # =====================================================================
+      - name: state_operation
+        description: >
+          Estado de operação do inversor (código numérico).
+          Valores comuns:
+          - 0: Standby/Desligado
+          - 3: Produzindo (grid-connected)
+        tests:
+          - not_null
+
+      - name: state_simplified
+        description: >
+          Estado simplificado (binário).
+          - 0: Não produzindo
+          - 1: Produzindo
+        tests:
+          - not_null
+
+  - name: stg_inverter_discrete_data
+    description: >
+      **Staging Model - Dados Discretos de Inversores (Eventos/Alarmes)**
+
+
+      Extrai códigos discretos dos inversores em formato JSONB flexível.
+      Esta abordagem permite receber qualquer código discreto sem necessidade
+      de mapear colunas fixas, tornando o modelo mais performático e escalável.
+
+
+      **Características:**
+      - Hypertable TimescaleDB com chunks de 1 dia
+      - Atualização incremental a cada 5 minutos
+      - Compressão automática após 7 dias (JSONB comprime ~90%)
+      - Retenção de 1 ano
+      - Unique key: (device_id, timestamp)
+      - Armazenamento em JSONB para flexibilidade
+
+
+      **Estrutura do JSON (discrete_data_json):**
+      - Contém apenas códigos numéricos (ex: "2003", "2011", "61440")
+      - Cada código tem valor 0 (desatuado) ou 1 (atuado)
+      - Exclui automaticamente campos analógicos
+      - Exclui campos que começam com "str" (strings)
+      - Exemplo: {"2003": "1", "2011": "0", "61440": "0", "communication_failure": "0"}
+
+
+      **Uso na camada INTERMEDIATE:**
+      Será usado em int_events_alarms que fará:
+      - LATERAL join para "explodir" o JSON em linhas (uma por código)
+      - JOIN com tb_event_alarm_catalog para buscar descrição, tipo e severidade
+      - Filtrar apenas códigos que existem no catálogo
+
+
+      **Autores:** Heitor Teixeira
+
+    config:
+      materialized: incremental
+      unique_key: ['device_id', 'timestamp']
+
+    columns:
+      # =====================================================================
+      # IDENTIFICADORES E TIMESTAMP
+      # =====================================================================
+      - name: timestamp
+        description: >
+          Data/hora da leitura do sensor (timestamptz).
+          Utilizado como dimension_column da hypertable.
+        tests:
+          - not_null
+
+      - name: power_plant_id
+        description: ID da usina solar onde o inversor está instalado
+        tests:
+          - not_null
+
+      - name: device_id
+        description: ID único do inversor
+        tests:
+          - not_null
+
+      # =====================================================================
+      # JSON DE DADOS DISCRETOS
+      # =====================================================================
+      - name: discrete_data_json
+        description: >
+          JSONB contendo todos os códigos discretos (eventos/alarmes) do inversor.
+
+          Estrutura:
+          - Chaves: códigos numéricos como strings (ex: "2003", "61440", "communication_failure")
+          - Valores: "0" (desatuado) ou "1" (atuado)
+
+          Vantagens:
+          - Flexibilidade: aceita novos códigos sem alterar schema
+          - Performance: JSONB comprime muito bem (~90%)
+          - Escalabilidade: não aumenta número de colunas
+
+          Exemplo:
+          {"2003": "1", "2011": "0", "2033": "0", "61440": "0", "communication_failure": "0"}
+        tests:
+          - not_null
+
+  - name: stg_inverter_string_data
+    description: >
+      **Staging Model - Último Registro de Corrente das Strings de Inversores**
+
+
+      Retorna o ÚLTIMO registro de cada string de cada inversor, incluindo
+      informações do inversor (device_id) e da usina (power_plant_id).
+
+
+      **Características:**
+      - View simples (sem materialização física)
+      - Retorna apenas o último registro de cada string por inversor
+      - Extração direta por chave JSON (string_1_current até string_32_current)
+      - Formato long/unpivoted (uma linha por string)
+
+
+      **Casos de Uso:**
+      - Dashboard de monitoramento em tempo real
+      - Visualização do estado atual das strings
+      - Detecção de strings com baixa performance
+
+
+      **Autores:** Heitor Teixeira
+
+    config:
+      materialized: view
+
+    columns:
+      # =====================================================================
+      # IDENTIFICADORES E TIMESTAMP
+      # =====================================================================
+      - name: timestamp
+        description: >
+          Data/hora do último registro do inversor (timestamp).
+        tests:
+          - not_null
+
+      - name: power_plant_id
+        description: ID da usina solar onde o inversor está instalado
+        tests:
+          - not_null
+
+      - name: device_id
+        description: ID único do inversor
+        tests:
+          - not_null
+
+      - name: device_name
+        description: Nome/identificador do inversor (vindo de tb_devices)
+
+      # =====================================================================
+      # IDENTIFICAÇÃO DA STRING
+      # =====================================================================
+      - name: string_number
+        description: >
+          Número da string (1, 2, 3, ..., N).
+          Extraído dinamicamente do nome do campo JSON (string_N_current).
+          O número de strings varia por modelo de inversor.
+        tests:
+          - not_null
+
+      # =====================================================================
+      # MEDIÇÃO
+      # =====================================================================
+      - name: string_current
+        description: >
+          Corrente da string (A - Amperes).
+          Valores típicos: 8A a 12A durante operação normal.
+          Zero durante a noite ou quando o inversor está desligado.
+
+      - name: state_simplified
+        description: >
+          Estado simplificado do inversor (binário).
+          - 0: Não produzindo
+          - 1: Produzindo
+          Útil para filtrar leituras válidas (estado = 1).

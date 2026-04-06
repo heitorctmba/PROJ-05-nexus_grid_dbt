@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: mart_power_plants_overview
+    description: |
+      Visão geral consolidada das usinas solares para dashboards executivos.
+      Combina dados de cadastro com métricas operacionais em tempo real.
+
+      NOTA: Alguns campos ainda estão como placeholders (NULL) e serão
+      implementados posteriormente conforme definição das regras de negócio.
+    columns:
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+          - unique
+      - name: power_plant_name
+        description: Nome da usina
+        tests:
+          - not_null
+      - name: rated_power_kw
+        description: Capacidade nominal instalada em kWp (Rated Power)
+      - name: active_power_kw
+        description: Potência ativa atual da usina (do medidor) em kW
+      - name: daily_energy_kwh
+        description: Energia diária gerada em kWh (do smart logger)
+      - name: irradiance_wm2
+        description: Irradiância solar POA em W/m² (da estação meteorológica)
+      - name: inverter_availability_pct
+        description: Disponibilidade dos inversores em % (de int_inverter_availability)
+      - name: rates_availability_pct
+        description: Disponibilidade dos relés de proteção em % (de int_relay_availability)
+      - name: pr_pct
+        description: Performance Ratio em % (PLACEHOLDER - a implementar)
+      - name: location
+        description: Localização (cidade, estado)
+      - name: meter_last_reading_timestamp
+        description: Timestamp da última leitura do medidor
+      - name: logger_last_reading_timestamp
+        description: Timestamp da última leitura do logger
+      - name: weather_last_reading_timestamp
+        description: Timestamp da última leitura da estação meteorológica
+      - name: updated_at
+        description: Timestamp de atualização do registro
+        tests:
+          - not_null

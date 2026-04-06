@@ -1,0 +1,70 @@
+version: 2
+
+sources:
+  - name: reference
+    description: >
+      Tabelas de referência e cadastro do sistema
+    database: "{{ target.database }}"
+    schema: public
+    tables:
+      - name: tb_power_plants
+        description: >
+          Cadastro de usinas solares contendo informações de capacidade,
+          localização e relacionamento com clientes
+        columns:
+          - name: id
+            description: Identificador único da usina
+            tests:
+              - not_null
+              - unique
+
+          - name: customer_id
+            description: Cliente proprietário da usina
+            tests:
+              - not_null
+
+          - name: name
+            description: Nome da usina
+            tests:
+              - not_null
+
+          - name: capacity
+            description: Capacidade instalada em kWp
+
+          - name: location
+            description: Localização (cidade, estado)
+
+          - name: location_lat
+            description: Latitude da usina (formato decimal)
+
+          - name: location_long
+            description: Longitude da usina (formato decimal)
+
+          - name: is_active
+            description: Status da usina (ativo/inativo)
+
+      - name: tb_devices
+        description: >
+          Cadastro unificado de todos os dispositivos (inversores, medidores, loggers, etc)
+        columns:
+          - name: id
+            description: Identificador único do device
+            tests:
+              - not_null
+              - unique
+
+          - name: device_type_id
+            description: Tipo do dispositivo (1=inverter, 2=relay, 3=logger, etc)
+            tests:
+              - not_null
+
+          - name: power_plant_id
+            description: Usina onde o device está instalado
+            tests:
+              - not_null
+
+          - name: device_name
+            description: Nome/identificador do device
+
+          - name: is_active
+            description: Status do device (ativo/inativo)

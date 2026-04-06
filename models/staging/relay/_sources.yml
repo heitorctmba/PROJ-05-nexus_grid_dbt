@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Camada RAW (Bronze Layer) - Dados brutos recebidos dos sensores
+      no formato Grid Co (valor@timestamp)
+    database: "{{ target.database }}"
+    schema: public
+    tables:
+      - name: raw_relay
+        description: >
+          Dados brutos dos relés de proteção (DJMT). Cada registro contém um JSON
+          com métricas analógicas e eventos/alarmes no formato
+          Grid Co: "valor@YYYYMMDDHHmmss"
+        columns:
+          - name: timestamp
+            description: Data/hora da leitura (timestamp do sensor)
+            tests:
+              - not_null
+
+          - name: power_plant_id
+            description: ID da usina solar
+            tests:
+              - not_null
+
+          - name: device_id
+            description: ID do relé
+            tests:
+              - not_null
+
+          - name: json_data
+            description: >
+              Payload completo do sensor contendo:
+              - Campos analógicos (active_power, line_voltage_ab, etc)
+              - Campos discretos (undervoltage, overvoltage, communication_failure, etc)
+            tests:
+              - not_null
+
+        freshness:
+          warn_after: {count: 10, period: minute}
+          error_after: {count: 30, period: minute}
+        loaded_at_field: timestamp

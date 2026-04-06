@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: int_relay_availability
+    description: |
+      Calcula a disponibilidade dos relés de proteção por usina.
+      Disponibilidade = (Relés Ativos / Total de Relés) * 100.
+
+      Relé ATIVO: última leitura com qualquer campo analógico não nulo/não zerado.
+      Relé INATIVO: última leitura com todos os campos zerados/nulos ou sem leituras recentes.
+    columns:
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+          - unique
+      - name: total_relays
+        description: Total de relés cadastrados na usina (is_active = TRUE)
+      - name: active_relays
+        description: Quantidade de relés ativos (com última leitura válida)
+      - name: inactive_relays
+        description: Quantidade de relés inativos (última leitura zerada/nula)
+      - name: no_data_relays
+        description: Quantidade de relés sem leitura recente (perderam conexão)
+      - name: availability_pct
+        description: Percentual de disponibilidade dos relés (0-100%)
+
+  - name: int_relay_latest_readings
+    description: |
+      Retorna o último valor registrado de cada campo analógico
+      dos relés de proteção por power_plant_id.
+    columns:
+      - name: device_id
+        description: ID do relé
+        tests:
+          - not_null
+      - name: power_plant_id
+        description: ID da usina
+        tests:
+          - not_null
+      - name: timestamp
+        description: Timestamp da última leitura
+        tests:
+          - not_null
+      - name: active_power
+        description: Potência ativa em kW
+      - name: line_voltage_ab
+        description: Tensão de linha AB em kV
+      - name: line_voltage_bc
+        description: Tensão de linha BC em kV
+      - name: line_voltage_ca
+        description: Tensão de linha CA em kV
+      - name: apparent_power
+        description: Potência aparente em kVA
+      - name: power_reactive
+        description: Potência reativa em kVAr
+      - name: current_phase_a
+        description: Corrente da fase A em A
+      - name: current_phase_b
+        description: Corrente da fase B em A
+      - name: current_phase_c
+        description: Corrente da fase C em A
